@@ -3502,7 +3502,7 @@ background: #fff;
 /* Mobile background */
 @media (max-width: 767px) {
     .lower-page-facts {
-        /* background-attachment: scroll;  */
+        background-attachment: scroll; /* disable fixed on mobile */
         background-size: cover; /* fills the section */
         background-position: center top; /* adjust focus point */
         padding: 80px 0; /* adjust spacing for smaller screens */

@@ -1838,6 +1838,7 @@ padding-top: 20px;
 width: 100%;
 }
 
+
 .featured-work-box {
 position: relative;
 float: left;
@@ -4228,6 +4229,12 @@ overflow: hidden;
 background: none;
 }
 
+@media (max-width: 768px) {
+  #viewport {
+    pointer-events: none;
+    touch-action: pan-y;
+  }
+}
 
 
 #wall {

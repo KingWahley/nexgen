@@ -3487,22 +3487,29 @@ background: #fff;
 }
 
 .lower-page-facts {
-position: relative;
-height: auto;
-min-height: inherit;
-overflow: hidden;
-background-attachment: fixed;
-background-repeat: no-repeat;
-background-position: center center;
--webkit-background-size: cover;
-   -moz-background-size: cover;
-     -o-background-size: cover;
-        background-size: cover;
--webkit-box-sizing: border-box;
-   -moz-box-sizing: border-box;
-        box-sizing: border-box;
-padding: 136px 0 141px 0;
+    position: relative;
+    height: auto;
+    min-height: inherit;
+    overflow: hidden;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover;
+    box-sizing: border-box;
+    padding: 136px 0 141px 0;
 }
+
+/* Mobile background */
+@media (max-width: 767px) {
+    .lower-page-facts {
+        /* background-attachment: scroll;  */
+        background-size: cover; /* fills the section */
+        background-position: center top; /* adjust focus point */
+        padding: 80px 0; /* adjust spacing for smaller screens */
+    }
+}
+
+
 
 .lower-page-works-intro {
 position: relative;

@@ -1838,6 +1838,14 @@ padding-top: 20px;
 width: 100%;
 }
 
+@media (max-width: 767px) {
+  #featured-work-carousel .col-sm-4 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+}
+
+
 .featured-work-box {
 position: relative;
 float: left;

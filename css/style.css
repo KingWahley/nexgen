@@ -2294,6 +2294,53 @@ letter-spacing: 0.05em;
 -moz-osx-font-smoothing: grayscale;
 }
 
+.accordion-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.accordion-item.active .accordion-body {
+  max-height: 300px; /* safe value */
+}
+
+.services-accordion{
+   margin-top: 50px;
+     padding: 0px 10px;
+
+}
+
+.accordion-header {
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 16px 0px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 18px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  color: #111;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.accordion-arrow {
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid #111;
+  border-bottom: 2px solid #111;
+  transform: rotate(45deg);
+  transition: transform 0.3s ease;
+}
+
+/* Rotate arrow when open */
+.accordion-item.active .accordion-arrow {
+  transform: rotate(-135deg);
+}
+
 
 /* newsletter field effect */
 /* normalize */
@@ -4554,6 +4601,61 @@ cursor: pointer;
 /* cursor:url(grabbing.png) 8 8, move; */
 cursor: move;
 }
+
+.news-post {
+  margin-bottom: 80px;
+}
+
+.news-media {
+  overflow: hidden;
+}
+
+.news-image {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.news-content {
+  padding-left: 10px;
+}
+
+.news-date {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #777;
+  margin-bottom: 12px;
+}
+
+.news-title {
+  font-size: 28px;
+  font-weight: 600;
+  margin: 0 0 6px;
+}
+
+.news-category {
+  font-size: 13px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #999;
+}
+
+.news-content p {
+  margin-top: 18px;
+  line-height: 1.7;
+  color: #444;
+}
+
+.read-more {
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid currentColor;
+  padding-bottom: 2px;
+}
+
+
 
 /* fix */
 .owl-carousel  .owl-wrapper,

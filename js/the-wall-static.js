@@ -509,6 +509,7 @@ $(function () {
 
 // 18. the Wall
 window.addEvent("domready", function () {
+  // Image wall data
   var imagewall = [
     ["the-wall/1.jpg", [["the-wall/1-2.jpg", ""]]],
     ["the-wall/2.jpg", [["the-wall/2-2.jpg", "n"]]],
@@ -522,14 +523,7 @@ window.addEvent("domready", function () {
     ["the-wall/10.jpg", [["the-wall/10-2.jpg", ""]]],
     ["the-wall/11.jpg", [["the-wall/11-2.jpg", ""]]],
     ["the-wall/12.jpg", [["the-wall/12-2.jpg", "on"]]],
-    [
-      "the-wall/13.jpg",
-      [
-        ["the-wall/13-2.jpg", ""],
-        ["the-wall/13-3.jpg", ""],
-        ["the-wall/13-4.jpg", ""],
-      ],
-    ],
+    ["the-wall/13.jpg", [["the-wall/13-2.jpg", ""], ["the-wall/13-3.jpg", ""], ["the-wall/13-4.jpg", ""]]],
     ["the-wall/14.jpg", [["the-wall/14-2.jpg", ""]]],
     ["the-wall/15.jpg", [["the-wall/15-2.jpg", ""]]],
     ["the-wall/16.jpg", [["the-wall/16-2.jpg", ""]]],
@@ -553,167 +547,126 @@ window.addEvent("domready", function () {
     ["the-wall/34.jpg", [["the-wall/34-2.jpg", ""]]],
     ["the-wall/35.jpg", [["the-wall/35-2.jpg", ""]]],
     ["the-wall/36.jpg", [["the-wall/36-2.jpg", ""]]],
-    [
-      "the-wall/plus-1.jpg",
-      [
-        ["the-wall/plus-1-2.jpg", ""], // an extra image to compensate for the gap
-      ],
-    ],
+    ["the-wall/plus-1.jpg", [["the-wall/plus-1-2.jpg", ""]]]
   ];
+
   var maxLength = 36;
-  var wallFluid = new Wall("wall", {
-    draggable: true,
-    slideshow: false, // options: true, false
-    speed: 1000,
-    showDuration: 4000,
-    transition: Fx.Transitions.Quad.easeOut,
-    inertia: true,
-    autoposition: true,
-    width: 301,
-    height: 320,
-    rangex: [-100, 100],
-    rangey: [-100, 100],
-    callOnUpdate: function (items) {
-      var root = Math.ceil(Math.sqrt(maxLength));
-      document.id("wall").setStyle("margin-left", 0);
-      var i = 0;
 
-      (function processItem() {
-        try {
-          var position =
-            (Math.abs(items[i].y) % root) * root +
-            (Math.abs(items[i].x) % root);
-          if (position >= maxLength) {
-            position = Math.floor(Math.random() * maxLength);
-          }
-
-          // Clear previous content
-          items[i].node.empty();
-
-          // Center the image inside tile
-          items[i].node.setStyles({
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-          });
-
-          // Main image
-          var file = imagewall[position][0];
-          var img = new Element("img[src=" + file + "]");
-          img.setStyles({
-            width: "auto",
-            height: "auto",
-            maxWidth: "100%",
-            maxHeight: "100%",
-            display: "block",
-          });
-          img.inject(items[i].node).fade("hide").fade("in");
-
-          // Slideshow
-          var list = new Element("ul").setProperty("class", "slideshow");
-          for (var j = 0; j < imagewall[position][1].length; j++) {
-            var slide = new Element("li");
-            var slideImg = new Element("img", {
-              src: imagewall[position][1][j][0],
-            });
-            slideImg.setStyles({
-              width: "auto",
-              height: "auto",
-              maxWidth: "100%",
-              maxHeight: "100%",
-            });
-            slideImg.inject(slide);
-
-            var desc = new Element("span", {
-              html: imagewall[position][1][j][1],
-            });
-            var div = new Element("div").setProperty(
-              "class",
-              "wall-item-description"
-            );
-            desc.inject(div);
-            div.inject(slide);
-
-            slide.inject(list);
-          }
-          list.inject(items[i].node);
-
-          // Hover slideshow
-          var stop = false;
-          var firstSlide = true;
-          items[i].node.addEvents({
-            mouseenter: function () {
-              list
-                .getChildren("li")
-                .setStyles({ visibility: "hidden", opacity: 0 });
-              stop = false;
-
-              if (imagewall[position][1].length) {
-                (function slideAnimation(item) {
-                  item.fade("in");
-                  var delay = firstSlide ? 1000 : 2000;
-                  firstSlide = false;
-
-                  if (item.getNext("li")) {
-                    var nextSlide = arguments.callee;
-                    (function () {
-                      item.fade("out");
-                      if (!stop) nextSlide(item.getNext("li"));
-                    }).delay(delay);
-                  } else if (item.getSiblings("li").length > 0) {
-                    var nextSlide = arguments.callee;
-                    (function () {
-                      item.fade("out");
-                      if (!stop) nextSlide(item.getSiblings("li").pop());
-                    }).delay(delay);
-                  }
-                })(new Element(list.getFirst("li")));
-
-                img.fade("out");
-              }
-              return false;
-            },
-            mouseleave: function () {
-              stop = true;
-              firstSlide = true;
-              if (imagewall[position][1].length) {
-                list.getChildren("li").fade("out");
-                img.fade("in");
-              }
-            },
-          });
-
-          i++;
-          if (i < items.length) {
-            (function () {
-              processItem();
-            }).delay(10);
-          }
-        } catch (e) {
-          console.error(e);
-        }
-      })();
-    },
+  // Flatten all images for preloading
+  var allImages = [];
+  imagewall.forEach(tile => {
+    allImages.push(tile[0]); // main
+    tile[1].forEach(slide => allImages.push(slide[0])); // slides
   });
-  window.setTimeout(function () {
+
+  // Preload all images
+  function preloadImages(images, callback) {
+    let loaded = 0;
+    images.forEach(src => {
+      const img = new Image();
+      img.src = src;
+      img.onload = img.onerror = () => {
+        loaded++;
+        if (loaded === images.length) callback();
+      };
+    });
+  }
+
+  // After preloading, build the wall
+  preloadImages(allImages, function () {
+    console.log("All images preloaded, initializing wall...");
+
+    var wallFluid = new Wall("wall", {
+      draggable: true,
+      slideshow: false,
+      speed: 1000,
+      showDuration: 4000,
+      transition: Fx.Transitions.Quad.easeOut,
+      inertia: true,
+      autoposition: true,
+      width: 301,
+      height: 320,
+      rangex: [-100, 100],
+      rangey: [-100, 100],
+      callOnUpdate: function (items) {
+        var root = Math.ceil(Math.sqrt(maxLength));
+        document.id("wall").setStyle("margin-left", 0);
+
+        // Process all items in parallel (faster)
+        items.forEach((item, i) => {
+          try {
+            let position = (Math.abs(item.y) % root) * root + (Math.abs(item.x) % root);
+            if (position >= maxLength) position = Math.floor(Math.random() * maxLength);
+
+            item.node.empty();
+            item.node.setStyles({ display: "flex", justifyContent: "center", alignItems: "center" });
+
+            // Main image
+            const mainImg = new Element("img[src=" + imagewall[position][0] + "]");
+            mainImg.setStyles({ width: "auto", height: "auto", maxWidth: "100%", maxHeight: "100%", display: "block" });
+            mainImg.inject(item.node).fade("hide").fade("in");
+
+            // Slideshow
+            const list = new Element("ul").setProperty("class", "slideshow");
+            imagewall[position][1].forEach(slide => {
+              const li = new Element("li");
+              const slideImg = new Element("img", { src: slide[0] });
+              slideImg.setStyles({ width: "auto", height: "auto", maxWidth: "100%", maxHeight: "100%" });
+              slideImg.inject(li);
+
+              const desc = new Element("span", { html: slide[1] });
+              const div = new Element("div").setProperty("class", "wall-item-description");
+              desc.inject(div);
+              div.inject(li);
+
+              li.inject(list);
+            });
+            list.inject(item.node);
+
+            // Hover slideshow
+            let stop = false, firstSlide = true;
+            item.node.addEvents({
+              mouseenter: function () {
+                list.getChildren("li").setStyles({ visibility: "hidden", opacity: 0 });
+                stop = false;
+
+                if (imagewall[position][1].length) {
+                  (function slideAnimation(itemLi) {
+                    itemLi.fade("in");
+                    const delay = firstSlide ? 1000 : 2000;
+                    firstSlide = false;
+
+                    const next = itemLi.getNext("li") || (itemLi.getSiblings("li").length ? itemLi.getSiblings("li")[0] : null);
+                    if (next) {
+                      (function () { itemLi.fade("out"); if (!stop) slideAnimation(next); }).delay(delay);
+                    }
+                  })(list.getFirst("li"));
+
+                  mainImg.fade("out");
+                }
+                return false;
+              },
+              mouseleave: function () {
+                stop = true;
+                firstSlide = true;
+                list.getChildren("li").fade("out");
+                mainImg.fade("in");
+              }
+            });
+
+          } catch (e) {
+            console.error(e);
+          }
+        });
+      }
+    });
+
+    // Initialize the wall
     wallFluid.initWall();
-    /* AUTO FLOW UPDATE */
-    (function () {
-      var dx = 0.6;
-      var dy = 0.4;
+  });
 
-      (function animate() {
-        if (!wallFluid) return;
-
-        // wallFluid.moveBy(dx, dy);
-
-        // soft boundary bounce
-        // if (wallFluid.pos.x > 300 || wallFluid.pos.x < -300) dx *= -1;
-        // if (wallFluid.pos.y > 300 || wallFluid.pos.y < -300) dy *= -1;
-      }).periodical(40);
-    })();
-  }, 500);
 });
+
 
 // 19. GOOGLE ANALYTICS [for demonstration purposes only]
 (function (i, s, o, g, r, a, m) {

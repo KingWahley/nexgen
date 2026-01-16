@@ -509,7 +509,6 @@ $(function () {
 
 // 18. the Wall
 window.addEvent("domready", function () {
-  // Image wall data
   var imagewall = [
     ["the-wall/1.jpg", [["the-wall/1-2.jpg", ""]]],
     ["the-wall/2.jpg", [["the-wall/2-2.jpg", "n"]]],
@@ -523,7 +522,14 @@ window.addEvent("domready", function () {
     ["the-wall/10.jpg", [["the-wall/10-2.jpg", ""]]],
     ["the-wall/11.jpg", [["the-wall/11-2.jpg", ""]]],
     ["the-wall/12.jpg", [["the-wall/12-2.jpg", "on"]]],
-    ["the-wall/13.jpg", [["the-wall/13-2.jpg", ""], ["the-wall/13-3.jpg", ""], ["the-wall/13-4.jpg", ""]]],
+    [
+      "the-wall/13.jpg",
+      [
+        ["the-wall/13-2.jpg", ""],
+        ["the-wall/13-3.jpg", ""],
+        ["the-wall/13-4.jpg", ""],
+      ],
+    ],
     ["the-wall/14.jpg", [["the-wall/14-2.jpg", ""]]],
     ["the-wall/15.jpg", [["the-wall/15-2.jpg", ""]]],
     ["the-wall/16.jpg", [["the-wall/16-2.jpg", ""]]],
@@ -547,35 +553,25 @@ window.addEvent("domready", function () {
     ["the-wall/34.jpg", [["the-wall/34-2.jpg", ""]]],
     ["the-wall/35.jpg", [["the-wall/35-2.jpg", ""]]],
     ["the-wall/36.jpg", [["the-wall/36-2.jpg", ""]]],
-    ["the-wall/plus-1.jpg", [["the-wall/plus-1-2.jpg", ""]]]
+    ["the-wall/plus-1.jpg", [["the-wall/plus-1-2.jpg", ""]]],
   ];
 
   var maxLength = 36;
 
-  // Flatten all images for preloading
-  var allImages = [];
-  imagewall.forEach(tile => {
-    allImages.push(tile[0]); // main
-    tile[1].forEach(slide => allImages.push(slide[0])); // slides
+  // Preload main images only
+  var mainImages = imagewall.map((tile) => tile[0]);
+  var imagesLoaded = 0;
+
+  mainImages.forEach((src) => {
+    const img = new Image();
+    img.src = src;
+    img.onload = img.onerror = () => {
+      imagesLoaded++;
+      if (imagesLoaded === mainImages.length) initWall();
+    };
   });
 
-  // Preload all images
-  function preloadImages(images, callback) {
-    let loaded = 0;
-    images.forEach(src => {
-      const img = new Image();
-      img.src = src;
-      img.onload = img.onerror = () => {
-        loaded++;
-        if (loaded === images.length) callback();
-      };
-    });
-  }
-
-  // After preloading, build the wall
-  preloadImages(allImages, function () {
-    console.log("All images preloaded, initializing wall...");
-
+  function initWall() {
     var wallFluid = new Wall("wall", {
       draggable: true,
       slideshow: false,
@@ -592,81 +588,71 @@ window.addEvent("domready", function () {
         var root = Math.ceil(Math.sqrt(maxLength));
         document.id("wall").setStyle("margin-left", 0);
 
-        // Process all items in parallel (faster)
         items.forEach((item, i) => {
           try {
-            let position = (Math.abs(item.y) % root) * root + (Math.abs(item.x) % root);
-            if (position >= maxLength) position = Math.floor(Math.random() * maxLength);
+            let position =
+              (Math.abs(item.y) % root) * root + (Math.abs(item.x) % root);
+            if (position >= maxLength)
+              position = Math.floor(Math.random() * maxLength);
 
             item.node.empty();
-            item.node.setStyles({ display: "flex", justifyContent: "center", alignItems: "center" });
-
-            // Main image
-            const mainImg = new Element("img[src=" + imagewall[position][0] + "]");
-            mainImg.setStyles({ width: "auto", height: "auto", maxWidth: "100%", maxHeight: "100%", display: "block" });
-            mainImg.inject(item.node).fade("hide").fade("in");
-
-            // Slideshow
-            const list = new Element("ul").setProperty("class", "slideshow");
-            imagewall[position][1].forEach(slide => {
-              const li = new Element("li");
-              const slideImg = new Element("img", { src: slide[0] });
-              slideImg.setStyles({ width: "auto", height: "auto", maxWidth: "100%", maxHeight: "100%" });
-              slideImg.inject(li);
-
-              const desc = new Element("span", { html: slide[1] });
-              const div = new Element("div").setProperty("class", "wall-item-description");
-              desc.inject(div);
-              div.inject(li);
-
-              li.inject(list);
+            item.node.setStyles({
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              backgroundImage: "url('" + imagewall[position][0] + "')",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
             });
-            list.inject(item.node);
 
-            // Hover slideshow
-            let stop = false, firstSlide = true;
+            // Lazy-load hover slides only when hovered
+            item.slidesRendered = false;
             item.node.addEvents({
               mouseenter: function () {
-                list.getChildren("li").setStyles({ visibility: "hidden", opacity: 0 });
-                stop = false;
+                if (!item.slidesRendered && imagewall[position][1].length > 0) {
+                  const list = new Element("ul").setProperty(
+                    "class",
+                    "slideshow"
+                  );
+                  imagewall[position][1].forEach((slide) => {
+                    const li = new Element("li");
+                    const slideImg = new Element("img", {
+                      src: slide[0],
+                      loading: "lazy", // lazy load hover slides
+                    });
+                    slideImg.setStyles({
+                      width: "auto",
+                      height: "auto",
+                      maxWidth: "100%",
+                      maxHeight: "100%",
+                    });
+                    slideImg.inject(li);
 
-                if (imagewall[position][1].length) {
-                  (function slideAnimation(itemLi) {
-                    itemLi.fade("in");
-                    const delay = firstSlide ? 1000 : 2000;
-                    firstSlide = false;
+                    const desc = new Element("span", { html: slide[1] });
+                    const div = new Element("div").setProperty(
+                      "class",
+                      "wall-item-description"
+                    );
+                    desc.inject(div);
+                    div.inject(li);
 
-                    const next = itemLi.getNext("li") || (itemLi.getSiblings("li").length ? itemLi.getSiblings("li")[0] : null);
-                    if (next) {
-                      (function () { itemLi.fade("out"); if (!stop) slideAnimation(next); }).delay(delay);
-                    }
-                  })(list.getFirst("li"));
-
-                  mainImg.fade("out");
+                    li.inject(list);
+                  });
+                  list.inject(item.node);
+                  item.slidesRendered = true;
                 }
-                return false;
               },
-              mouseleave: function () {
-                stop = true;
-                firstSlide = true;
-                list.getChildren("li").fade("out");
-                mainImg.fade("in");
-              }
             });
-
           } catch (e) {
             console.error(e);
           }
         });
-      }
+      },
     });
 
-    // Initialize the wall
     wallFluid.initWall();
-  });
-
+  }
 });
-
 
 // 19. GOOGLE ANALYTICS [for demonstration purposes only]
 (function (i, s, o, g, r, a, m) {
